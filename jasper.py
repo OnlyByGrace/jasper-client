@@ -90,7 +90,9 @@ class Jasper(object):
         try:
             slug = self.config['stt_passive_engine']
             stt_passive_engine_class = stt.get_engine_by_slug(slug)
+	    self._logger.debug("passive_stt_engine is %s", slug)
         except KeyError:
+	    self._logger.debug("No passive engin");
             stt_passive_engine_class = stt_engine_class
 
         try:

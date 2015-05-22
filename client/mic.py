@@ -52,7 +52,7 @@ class Mic:
         CHUNK = 1024
 
         # number of seconds to allow to establish threshold
-        THRESHOLD_TIME = 1
+        THRESHOLD_TIME = 2
 
         # prepare recording stream
         stream = self._audio.open(format=pyaudio.paInt16,
@@ -97,7 +97,7 @@ class Mic:
         CHUNK = 1024
 
         # number of seconds to allow to establish threshold
-        THRESHOLD_TIME = 1
+        THRESHOLD_TIME = 2
 
         # number of seconds to listen before forcing restart
         LISTEN_TIME = 10
@@ -222,13 +222,14 @@ class Mic:
         frames = []
         # increasing the range # results in longer pause after command
         # generation
-        lastN = [THRESHOLD * 1.2 for i in range(30)]
+        lastN = [THRESHOLD * 1.2 for i in range(40)]
 
         for i in range(0, RATE / CHUNK * LISTEN_TIME):
 
             data = stream.read(CHUNK)
             frames.append(data)
             score = self.getScore(data)
+	    #self._logger.debug("Score was: %s", score)
 
             lastN.pop(0)
             lastN.append(score)
