@@ -1,0 +1,3 @@
+[submodule "client/modules"]
+	path = client/modules
+	url = git@bitbucket.org:onlybygrace/jaspermodules.git
