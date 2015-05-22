@@ -593,6 +593,7 @@ class WitAiSTT(AbstractSTTEngine):
         try:
             r.raise_for_status()
             text = r.json()['_text']
+            self._looger.info(len(r.json()["outcomes"]))
         except requests.exceptions.HTTPError:
             self._logger.critical('Request failed with response: %r',
                                   r.text,
