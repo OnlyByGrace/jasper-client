@@ -76,6 +76,8 @@ class Brain(object):
                     self._logger.debug("'%s' is a valid phrase for module " +
                                        "'%s'", text, module.__name__)
                     try:
+                        module.handle(text, self.mic, self.profile, intent)
+                    except TypeError:
                         module.handle(text, self.mic, self.profile)
                     except:
                         self._logger.error('Failed to execute module',

@@ -76,9 +76,8 @@ class Conversation(object):
             self._logger.debug("Stopped to listen actively with threshold: %r",
                                threshold)
             
-            self.determineIntent(input)
+            intent = self.determineIntent(input)
             
-            intent = "what"
             if input:
                 self.brain.query(input,intent)
             else:
