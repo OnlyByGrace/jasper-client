@@ -15,12 +15,12 @@ class Conversation(object):
         self.notifier = Notifier(profile)
 
     def determineIntent(self, input):
-        r = requests.post('https://api.wit.ai/message?v=20150101&q='+input[0],
-                      headers={ 'Authorization': 'Bearer VJB6WYO2RQJUASHEENNUSHZ5UK4ENEA6',
-                     'accept': 'application/json'})
-                     
         if (len(input) == 0):
-            return []
+            return {}
+        
+        r = requests.post('https://api.wit.ai/message?v=20150524&q='+input[0],
+                      headers={ 'Authorization': 'Bearer TBYTRFCCBMHAKHHDKDCR7JTPMKNSVLOS',
+                     'accept': 'application/json'})
         
         try:
             r.raise_for_status()
@@ -43,7 +43,7 @@ class Conversation(object):
                                   exc_info=True)
             return []
         else:
-            transcribed = text
+            transcribed = text[0]
             self._logger.info('Intent: %r', transcribed)
             return transcribed
 
