@@ -71,6 +71,7 @@ class Brain(object):
                     validText = module.isValid(text,intent)
                 except TypeError:
                     validText = module.isValid(text)
+                    
                 if validText:
                     self._logger.debug("'%s' is a valid phrase for module " +
                                        "'%s'", text, module.__name__)

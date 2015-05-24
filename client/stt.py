@@ -15,6 +15,7 @@ import yaml
 import jasperpath
 import diagnose
 import vocabcompiler
+import uuid
 
 
 class AbstractSTTEngine(object):
@@ -579,7 +580,117 @@ class WitAiSTT(AbstractSTTEngine):
         self._token = value
         self._headers = {'Authorization': 'Bearer %s' % self.token,
                          'accept': 'application/json',
-                         'Content-Type': 'audio/wav'}
+                         'Content-Type': 'audio/raw;encoding=unsigned-integer;bits=16;rate=8000;endian=little',
+                         'Transfer-encoding' : 'chunked'}
+
+    @property
+    def headers(self):
+        return self._headers
+
+    def parse_response(self, r):
+        try:
+            r.raise_for_status()
+            text = r.json()['_text']
+            self._logger.info(len(r.json()["outcomes"]))
+        except requests.exceptions.HTTPError:
+            self._logger.critical('Request failed with response: %r',
+                                  r.text,
+                                  exc_info=True)
+            return []
+        except requests.exceptions.RequestException:
+            self._logger.critical('Request failed.', exc_info=True)
+            return []
+        except ValueError as e:
+            self._logger.critical('Cannot parse response: %s',
+                                  e.args[0])
+            return []
+        except KeyError:
+            self._logger.critical('Cannot parse response.',
+                                  exc_info=True)
+            return []
+        else:
+            transcribed = []
+            if text:
+                transcribed.append(text.upper())
+            self._logger.info('Transcribed: %r', transcribed)
+            return transcribed
+
+    def transcribe(self, fp):
+        data = fp.read()
+        r = requests.post('https://api.wit.ai/speech?v=20150101',
+                          data=data,
+                          headers=self.headers)
+        return self.parse_response(r)
+    
+    def transcribe_live(self, stream):
+        parameters = {'encoding':'unsigned-integer',
+                      'bits' : '16',
+                      'rate' : '8000',
+                      'endian' : 'little'}
+        self._logger.info("live streaming")
+        r = requests.post('https://api.wit.ai/speech?v=20150101',
+                          data=stream(),
+                          headers=self.headers)
+        self._logger.info("response was strange: %s",r.json());
+        return self.parse_response(r)
+
+    @classmethod
+    def is_available(cls):
+        return diagnose.check_network_connection()
+
+class BingSTT(AbstractSTTEngine):
+    """
+    Speech-To-Text implementation which relies on the Wit.ai Speech API.
+
+    This implementation requires an Wit.ai Access Token to be present in
+    profile.yml. Please sign up at https://wit.ai and copy your instance
+    token, which can be found under Settings in the Wit console to your
+    profile.yml:
+        ...
+        stt_engine: witai
+        witai-stt:
+          access_token:    ERJKGE86SOMERANDOMTOKEN23471AB
+    """
+
+    SLUG = "bing"
+
+    def __init__(self, access_token):
+        self._logger = logging.getLogger(__name__)
+        self.token = access_token
+
+    @classmethod
+    def get_config(cls):
+        # FIXME: Replace this as soon as we have a config module
+        config = {}
+        # Try to get wit.ai Auth token from config
+        profile_path = jasperpath.config('profile.yml')
+        if os.path.exists(profile_path):
+            with open(profile_path, 'r') as f:
+                profile = yaml.safe_load(f)
+                if 'witai-stt' in profile:
+                    if 'access_token' in profile['witai-stt']:
+                        config['access_token'] = \
+                            profile['witai-stt']['access_token']
+        return config
+
+    @property
+    def token(self):
+        return self._token
+
+    @token.setter
+    def token(self, value):
+        self._token = value
+        self._headers = {'Authorization': 'Bearer %s' % self.token,
+                         'accept': 'application/json',
+                         'Content-Type': 'audio/wav; samplerate=16000'}
+        self._payload = {'version' : '3.0',
+                         'request' : uuid.uuid4(),
+                         'appID' : 'D4D52672-91D7-4C74-8AD8-42B1D98141A5',
+                         'format' : 'json',
+                         'locale' : 'en-US',
+                         'device.os' : 'Raspbian',
+                         'scenarios' : 'ulm',
+                         'instanceid' : uuid.uuid4()}
 
     @property
     def headers(self):
@@ -587,9 +698,13 @@ class WitAiSTT(AbstractSTTEngine):
 
     def transcribe(self, fp):
         data = fp.read()
-        r = requests.post('https://api.wit.ai/speech?v=20150101',
+        
+        self._payload['request'] = uuid.uuid4()
+        
+        r = requests.post('https://speech.platform.bing.com/recognize',
                           data=data,
-                          headers=self.headers)
+                          headers=self.headers,
+                          params=self._payload)
         try:
             r.raise_for_status()
             text = r.json()['_text']
@@ -620,7 +735,6 @@ class WitAiSTT(AbstractSTTEngine):
     @classmethod
     def is_available(cls):
         return diagnose.check_network_connection()
-
 
 def get_engine_by_slug(slug=None):
     """

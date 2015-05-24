@@ -125,9 +125,11 @@ class Mic:
             lastN.pop(0)
             lastN.append(self.getScore(data))
             average = sum(lastN) / len(lastN)
-
+        
         # this will be the benchmark to cause a disturbance over!
         THRESHOLD = average * THRESHOLD_MULTIPLIER
+        
+        self._logger.info("Done logging threshold: %s", THRESHOLD)
 
         # save some memory for sound data
         frames = []
@@ -202,9 +204,14 @@ class Mic:
             Returns a list of the matching options or None
         """
 
-        RATE = 16000
-        CHUNK = 1024
-        LISTEN_TIME = 12
+        if (self.active_stt_engine.SLUG == "witai"):
+            RATE = 8000
+            CHUNK = 1024
+            LISTEN_TIME = 10
+        else:
+            RATE = 16000
+            CHUNK = 1024
+            LISTEN_TIME = 12
 
         # check if no threshold provided
         if THRESHOLD is None:
@@ -224,27 +231,43 @@ class Mic:
         # generation
         lastN = [THRESHOLD * 1.2 for i in range(40)]
 
-        for i in range(0, RATE / CHUNK * LISTEN_TIME):
+        def mic_gen():
+            self._logger.info("we're beginning to listen at threshhold %s", THRESHOLD)
+            for i in range(0, RATE / CHUNK * LISTEN_TIME):
+                data = stream.read(CHUNK)
+                yield data
+                score = self.getScore(data)
+    	        #self._logger.debug("Score was: %s", score)
+    
+                lastN.pop(0)
+                lastN.append(score)
+    
+                average = sum(lastN) / float(len(lastN))
+    
+                # TODO: 0.8 should not be a MAGIC NUMBER!
+                if average < THRESHOLD * 0.8:
+                    self._logger.info("we're aborting")
+                    break
+            return
 
-            data = stream.read(CHUNK)
-            frames.append(data)
-            score = self.getScore(data)
-	    #self._logger.debug("Score was: %s", score)
-
-            lastN.pop(0)
-            lastN.append(score)
-
-            average = sum(lastN) / float(len(lastN))
-
-            # TODO: 0.8 should not be a MAGIC NUMBER!
-            if average < THRESHOLD * 0.8:
-                break
+        #allow for live transcribing to cut back on response time
+        return_value = []
+        if (self.active_stt_engine.SLUG == "witai"):
+            return_value = self.active_stt_engine.transcribe_live(mic_gen)
+        else:
+            self._logger.info('not streaming')
+            for value in mic_gen():
+                frames.append(value)
 
         self.speaker.play(jasperpath.data('audio', 'beep_lo.wav'))
 
         # save the audio data
         stream.stop_stream()
         stream.close()
+        
+        if (len(return_value) > 0):
+            self._logger.info("We found something")
+            return return_value
 
         with tempfile.SpooledTemporaryFile(mode='w+b') as f:
             wav_fp = wave.open(f, 'wb')
