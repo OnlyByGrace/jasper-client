@@ -18,9 +18,14 @@ class Conversation(object):
         if (len(input) == 0):
             return {}
         
-        r = requests.post('https://api.wit.ai/message?v=20150524&q='+input[0],
+        print input[0]
+        parameters = {"q" : input[0].lower()}
+        r = requests.post('https://api.wit.ai/message?v=20150524',
                       headers={ 'Authorization': 'Bearer TBYTRFCCBMHAKHHDKDCR7JTPMKNSVLOS',
-                     'accept': 'application/json'})
+                     'accept': 'application/json'},
+                     params=parameters)
+                     
+        print r.url
         
         try:
             r.raise_for_status()
