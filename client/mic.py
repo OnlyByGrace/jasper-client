@@ -47,7 +47,7 @@ class Mic:
     def fetchThreshold(self):
 
         # TODO: Consolidate variables from the next three functions
-        THRESHOLD_MULTIPLIER = 1.8
+        THRESHOLD_MULTIPLIER = 2.0
         RATE = 16000
         CHUNK = 1024
 
@@ -92,7 +92,7 @@ class Mic:
         needs to be restarted.
         """
 
-        THRESHOLD_MULTIPLIER = 1.8
+        THRESHOLD_MULTIPLIER = 2.0
         RATE = 16000
         CHUNK = 1024
 
@@ -243,9 +243,9 @@ class Mic:
                 lastN.append(score)
     
                 average = sum(lastN) / float(len(lastN))
-    
+                self._logger.info("Current %s, threshold %s", average, THRESHOLD)
                 # TODO: 0.8 should not be a MAGIC NUMBER!
-                if average < THRESHOLD * 0.8:
+                if average < THRESHOLD * 1:
                     self._logger.info("we're aborting")
                     break
             return
