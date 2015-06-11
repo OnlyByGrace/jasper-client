@@ -580,8 +580,11 @@ class WitAiSTT(AbstractSTTEngine):
         self._token = value
         self._headers = {'Authorization': 'Bearer %s' % self.token,
                          'accept': 'application/json',
-                         'Content-Type': 'audio/raw;encoding=unsigned-integer;bits=16;rate=8000;endian=little',
-                         'Transfer-encoding' : 'chunked'}
+                         'Content-Type': 'audio/wav'}
+        # self._headers = {'Authorization': 'Bearer %s' % self.token,
+        #                  'accept': 'application/json',
+        #                  'Content-Type': 'audio/raw;encoding=unsigned-integer;bits=16;rate=8000;endian=little',
+        #                  'Transfer-encoding' : 'chunked'}
 
     @property
     def headers(self):

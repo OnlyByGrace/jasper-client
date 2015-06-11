@@ -3,6 +3,7 @@ import logging
 from notifier import Notifier
 from brain import Brain
 import requests
+from modules import House
 
 class Conversation(object):
 
@@ -13,6 +14,7 @@ class Conversation(object):
         self.profile = profile
         self.brain = Brain(mic, profile)
         self.notifier = Notifier(profile)
+        self.radioPaused = False
 
     def determineIntent(self, input):
         if (len(input) == 0):
@@ -73,6 +75,13 @@ class Conversation(object):
             if not transcribed or not threshold:
                 self._logger.info("Nothing has been said or transcribed.")
                 continue
+            
+            # Pause the radio
+            if House.radioPlaying():
+                self.radioPaused = True
+                self._logger.info("Pausing radio...")
+                House.stopRadio()
+            
             self._logger.info("Keyword '%s' has been said!", self.persona)
 
             self._logger.debug("Started to listen actively with threshold: %r",
@@ -87,3 +96,9 @@ class Conversation(object):
                 self.brain.query(input,intent)
             else:
                 self.mic.say("Pardon?")
+            
+            # Resume if necessary
+            if self.radioPaused == True:
+                self.radioPaused = False
+                self._logger.info("Resuming radio...")
+                House.startRadio()

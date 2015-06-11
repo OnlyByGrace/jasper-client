@@ -204,14 +204,9 @@ class Mic:
             Returns a list of the matching options or None
         """
 
-        if (self.active_stt_engine.SLUG == "witai"):
-            RATE = 8000
-            CHUNK = 1024
-            LISTEN_TIME = 10
-        else:
-            RATE = 16000
-            CHUNK = 1024
-            LISTEN_TIME = 12
+        RATE = 16000
+        CHUNK = 1024
+        LISTEN_TIME = 12
 
         # check if no threshold provided
         if THRESHOLD is None:
@@ -252,12 +247,12 @@ class Mic:
 
         #allow for live transcribing to cut back on response time
         return_value = []
-        if (self.active_stt_engine.SLUG == "witai"):
-            return_value = self.active_stt_engine.transcribe_live(mic_gen)
-        else:
-            self._logger.info('not streaming')
-            for value in mic_gen():
-                frames.append(value)
+        # if (self.active_stt_engine.SLUG == "witai"):
+        #     return_value = self.active_stt_engine.transcribe_live(mic_gen)
+        # else:
+        self._logger.info('not streaming')
+        for value in mic_gen():
+            frames.append(value)
 
         self.speaker.play(jasperpath.data('audio', 'beep_lo.wav'))
 
