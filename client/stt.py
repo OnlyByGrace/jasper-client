@@ -615,6 +615,7 @@ class WitAiSTT(AbstractSTTEngine):
             transcribed = []
             if text:
                 transcribed.append(text.upper())
+                transcribed.append(r.json()['outcomes'][0])
             self._logger.info('Transcribed: %r', transcribed)
             return transcribed
 
